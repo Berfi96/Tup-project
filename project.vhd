@@ -4,7 +4,7 @@ use ieee.std_logic_unsigned.all;
 
 entity projekt is
 	port ( C : in std_logic;
-			clocK_100MHz: in std_logic;
+			clocK_50MHz: in std_logic;
 		RED2, RED1, RED0 , RED3, RED4, RED5, RED6, RED7: out std_logic;
 	GRN2, GRN1, GRN0, GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
 	BLU1, BLU0, BLU2, BLU3, BLU4, BLU5, BLU6, BLU7 : out std_logic;
@@ -13,14 +13,18 @@ entity projekt is
 end projekt ;
 
 architecture Bech of projekt is
+-------------------------------------------------------------------------------
 signal LFSR: std_logic_vector(4 downto 0);
 SIGNAL rgb :STD_LOGIC_VECTOR(7 DOWNTO 0);
 SIGNAL counter_clock :std_logic_vector( 4 downto 0 ) := "00000";
 --SIGNAL counter_lfsr :std_logic_vector( 4 downto 0 ) := "00000";
 
 
+-------------------------------------------------------------------------------
+
+
 component vga is
-port( CLOCK_100MHz	: in std_logic;  -- zegar 50 MHz
+port( CLOCK_50MHz	: in std_logic;  -- zegar 50 MHz
 	RGB : in std_logic_vector(7 downto 0);
 	RED2, RED1, RED0 , RED3, RED4, RED5, RED6, RED7: out std_logic;
 	GRN2, GRN1, GRN0, GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
@@ -28,6 +32,7 @@ port( CLOCK_100MHz	: in std_logic;  -- zegar 50 MHz
 	H_SYNC, V_SYNC : inout std_logic  );
 end component;
 
+-------------------------------------------------------------------------------
 
 begin
 
@@ -37,25 +42,23 @@ begin
 
 
 if rising_edge(C) then
-	counter_clock <= counter_clock + 1; -- dodawanie
+	counter_clock <= counter_clock + 1; -- dodawanie licznika clockiem 
 	LFSR(0)<= LFSR(1) xor LFSR(2)xor LFSR(3) xor LFSR(4);
 	LFSR(4 downto 1) <= LFSR(3 downto 0);
 --	counter_lfsr<=LFSR;
 	
    if counter_clock="0001" then
+	--if couter_clock=counter_lfsr then   -- warunek na równą wartosć liczników (na później)
 	rgb<="11111111";
-	else rgb<="00001111";
+	else rgb<="00000000";
 	end if;
 	
 end if;
-
-
-
 end process;
 
 
-c1: vga port map (clock_100MHz=>clocK_100MHz,
-                  RGB=>rgb, --tutaj ewentualnie strzałki w drugą stronę, "<=" we wszystkich !
+c1: vga port map (clock_50MHz=>clocK_50MHz,
+              				        RGB=>rgb,   --moze tutaj zmienic "=>" na "<=" ?
 						RED1 => red1,
 						RED3=>RED3,
 						RED4=>RED4,
