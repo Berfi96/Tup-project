@@ -5,7 +5,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
  
 entity vga is
-port( CLOCK_100MHz	: in std_logic;  -- zegar 50 MHz
+port( CLOCK_50MHz	: in std_logic;  -- zegar 50 MHz
 	RGB : in std_logic_vector(7 downto 0);
 	RED2, RED1, RED0 , RED3, RED4, RED5, RED6, RED7: out std_logic;
 	GRN2, GRN1, GRN0, GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
@@ -23,10 +23,10 @@ architecture beh of vga is
  
 begin
  
-	process(CLOCK_100MHz)  -- dzielnik przez 50mhz 2
+	process(CLOCK_50MHz)  -- dzielnik 50mhz przez 2 =25mhz
 		variable q_int : std_logic_vector(1 downto 0);
 	begin
-		if rising_edge(CLOCK_100MHz) then q_int:=q_int+2; end if;
+		if rising_edge(CLOCK_50MHz) then q_int:=q_int+2; end if;
 		clock_25MHz<=q_int(1);
 	end process;
  
