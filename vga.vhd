@@ -7,9 +7,9 @@ use ieee.std_logic_unsigned.all;
 entity vga is
 port( CLOCK_50MHz	: in std_logic;  -- zegar 50 MHz
 	RGB : in std_logic_vector(7 downto 0);
-	RED2, RED1, RED0 , RED3, RED4, RED5, RED6, RED7: out std_logic;
-	GRN2, GRN1, GRN0, GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
-	BLU1, BLU0, BLU2, BLU3, BLU4, BLU5, BLU6, BLU7 : out std_logic;
+	RED2, RED1, RED0 : out std_logic; -- , RED3, RED4, RED5, RED6, RED7: out std_logic;
+	GRN2, GRN1, GRN0 : out std_logic;-- , GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
+	BLU1, BLU0 : out std_logic;--, BLU2, BLU3, BLU4, BLU5, BLU6, BLU7 : out std_logic;
 	H_SYNC, V_SYNC: inout std_logic  );
 end;
  
@@ -58,35 +58,35 @@ begin
  	process(clock_25MHz)  -- generowanie sygnalow REDn, GRNn i BLUn
  	begin
  		if rising_edge(clock_25MHz) then
- 			RED0 <= RGB(7) and video_on;
+ 			RED0 <= RGB(5) and video_on;
  			RED1 <= RGB(6) and video_on;
- 			RED2 <= RGB(5) and video_on;
+ 			RED2 <= RGB(7) and video_on;
 			
-			RED3 <= RGB(4) and video_on;
- 			RED4 <= RGB(3) and video_on;
- 			RED5 <= RGB(2) and video_on;
-			RED6 <= RGB(1) and video_on;
- 			RED7 <= RGB(0) and video_on;
+			--RED3 <= RGB(4) and video_on;
+ 			--RED4 <= RGB(3) and video_on;
+ 			--RED5 <= RGB(2) and video_on;
+			--RED6 <= RGB(1) and video_on;
+ 			--RED7 <= RGB(0) and video_on;
 			
- 			BLU0 <= RGB(7) and video_on;
- 			BLU1 <= RGB(6) and video_on;
- 			BLU2 <= RGB(5) and video_on;
+ 			BLU0 <= RGB(0) and video_on;
+ 			BLU1 <= RGB(1) and video_on;
+ 			--BLU2 <= RGB(5) and video_on;
 			
-			BLU3 <= RGB(4) and video_on;
- 			BLU4 <= RGB(3) and video_on;
- 			BLU5 <= RGB(2) and video_on;
-			BLU6 <= RGB(1) and video_on;
- 			BLU7 <= RGB(0) and video_on;
+			--BLU3 <= RGB(4) and video_on;
+ 			--BLU4 <= RGB(3) and video_on;
+ 			--BLU5 <= RGB(2) and video_on;
+			--BLU6 <= RGB(1) and video_on;
+ 			--BLU7 <= RGB(0) and video_on;
 			
-			GRN0 <= RGB(7) and video_on;
- 			GRN1 <= RGB(6) and video_on;
- 			GRN2 <= RGB(5) and video_on;
+			GRN0 <= RGB(2) and video_on;
+ 			GRN1 <= RGB(3) and video_on;
+ 			GRN2 <= RGB(4) and video_on;
 			
-			GRN3 <= RGB(4) and video_on;
- 			GRN4 <= RGB(3) and video_on;
- 			GRN5 <= RGB(2) and video_on;
-			GRN6 <= RGB(1) and video_on;
- 			GRN7 <= RGB(0) and video_on;
+			--GRN3 <= RGB(4) and video_on;
+ 			--GRN4 <= RGB(3) and video_on;
+ 			--GRN5 <= RGB(2) and video_on;
+			--GRN6 <= RGB(1) and video_on;
+ 			--GRN7 <= RGB(0) and video_on;
  		end if;
  	end process;
  
