@@ -57,32 +57,32 @@ end process;
 
 
 c1: vga port map (clock_50MHz=>clocK_50MHz,
-              				        RGB<=rgb,   --zmienione "=>" na "<=" ?
-						RED0 <= red0,
-						RED1<=RED1,
+              				        RGB=>rgb,   --zmienione "=>" na "<=" ?
+						RED0=> red0,
+						RED1=>RED1,
 						--RED4=>RED4,
 						--RED5=>RED5,
 						--RED6=>RED6,
 						--RED7=>RED7,
-						red2 <= red2,
-						grn0 <= grn0,
-						grn1<=grn1,
-						grn2<=grn2,
+						red2 => red2,
+						grn0 => grn0,
+						grn1=>grn1,
+						grn2=>grn2,
 						--GRN3=>GRN3,
 						--GRN4=>GRN4,
 						--GRN5=>GRN5,
 						--GRN6=>GRN6,
 						--GRN7=>GRN7,
-						blu0<=blu0,
-						blu1<=blu1,
+						blu0=>blu0,
+						blu1=>blu1,
 						--BLU2=>BLU2,
 						--BLU3=>BLU3,
 						--BLU4=>BLU4,
 						--BLU5=>BLU5,
 						--BLU6=>BLU6,
 						--BLU7=>BLU7,
-						h_sYNC<=h_sYNC,
-						v_sYNC<=v_sYNC);
+						h_sYNC=>h_sYNC,
+						v_sYNC=>v_sYNC);
 
 
 end Bech;
