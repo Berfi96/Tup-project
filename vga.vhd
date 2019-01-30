@@ -6,47 +6,37 @@ use ieee.std_logic_unsigned.all;
 entity vga is
     port
     (
-        clk_50 : in std_logic;                      --Zegar działający w 50MHz
+        clk_50 : in std_logic;                      --Zegar 50MHz
         RED2, RED1, RED0 , RED3, RED4, RED5, RED6, RED7: out std_logic;
 	GRN2, GRN1, GRN0, GRN3, GRN4, GRN5, GRN6, GRN7 : out std_logic;
 	BLU1, BLU0, BLU2, BLU3, BLU4, BLU5, BLU6, BLU7 : out std_logic;
 	key: std_logic_vector (3 downto 0);
         vga_hs : out std_logic;                     --impuls synchronizacji poziomej
-        vga_vs : out std_logic;  						 --impuls synchronizacji poziomej
-	
-	--dokladnosc do 1 sek, 4 stany maszyny, 1) lfsr generuje liczbe 2) licznik nabija sie do wartosci lfsr, jesli ją osiągnie to idzie do stanu nastepnego 
-	--3) wypisanie wartosci czasu ktory sie zlicza na diody 4) reset
-	--falga na ekranie, moze byc polski   max 75mln                    2^27  <- max wartosc licznika    -struktura na przerzutnikach D, na czym zrobione, jakie guziki
-	
-	
-		  vga_clk: out std_logic;
-		  n_sync : out std_logic;                    
-        n_blank : out std_logic;		  --impuls synchronizacji pionowej
-        pix_x : out std_logic_vector(9 downto 0);   --wspolrzednie aktualnie wyswietlanego piksela (x)
-        pix_y : out std_logic_vector(8 downto 0);    --wspolrzednie aktualnie wyswietlanego piksela (y)
-		  diody: out std_logic_vector(15 downto 0)
+        vga_vs : out std_logic;  		    --impuls synchronizacji pionowej
+	vga_clk: out std_logic;			    --Zegar doprowadzany do przetwornika VGA 25MHz
+	n_sync : out std_logic;                    
+        n_blank : out std_logic;		 
+        pix_x : out std_logic_vector(9 downto 0);   --wspolrzedne aktualnie wyswietlanego piksela (x)
+        pix_y : out std_logic_vector(8 downto 0);    --wspolrzedne aktualnie wyswietlanego piksela (y)
+	diody: out std_logic_vector(15 downto 0)
     );
 end vga;
 
 architecture Bech of vga is
---signal LFSR: std_logic_vector(17 downto 0);
-    signal clk_25 : std_logic; --Zegar działający w 25MHz
- signal clk_1hz : std_logic;
-    signal xcounter : integer range 0 to 799;  
-    signal ycounter : integer range 0 to 524; 
-	signal count: integer:=1;
+	
+signal clk_25 : std_logic; --Zegar działający w 25MHz
+signal xcounter : integer range 0 to 799;  
+signal ycounter : integer range 0 to 524; 
+signal count: integer:=1;
 signal tmp : std_logic := '0';
 signal rgb :std_logic_vector(23 downto 0) :=(others=>'0');
 signal rgb2 :std_logic_vector(23 downto 0) :=(others=>'0');
 SIGNAL counter_clock :integer;
---SIGNAL counter_lfsr :std_logic_vector( 4 downto 0 ) := "00000";
 signal licznik: integer :=3;
-	--type typ_stanu is (S0, S1, S2, S3);
-	--signal Stan : typ_stanu := S0; 
-	--signal diody: std_logic_vector(16 downto 0);
-	
-	begin
-   process (clk_50)    --generujemy wewnętrzny sygnał 25MHz
+
+----------------------------------------------------------
+begin
+   process (clk_50)    --generowanie sygnału 25MHz wykorzystując dzielnik częstotliwości
    begin
         if rising_edge(clk_50) then
             clk_25 <= not clk_25;
@@ -54,63 +44,54 @@ signal licznik: integer :=3;
     end process;
 ----------------------------------------------------------- 
     
-	 process(clk_25)
-	 variable LFSR: std_logic_vector(29 downto 0) :="000001110001001000000000001010";
-	 variable counter_lfsr :std_logic_vector(29 downto 0 ) := (others=>'0');
-	 variable LFSR_rgb: std_logic_vector(23 downto 0) :="000001110001001000000000";
+process(clk_25)
+ variable LFSR: std_logic_vector(29 downto 0) :="000001110001001000000000001010"; --Rejestr przesuwający z liniowym sprzężeniem zwrotnym wykorzystywany do wygenerowania losowej liczby która porównywana będzie z licznikiem nabijanym za pomocą zegara 
+ variable counter_lfsr :std_logic_vector(29 downto 0 ) := (others=>'0');
+ variable LFSR_rgb: std_logic_vector(23 downto 0) :="000001110001001000000000";--Rejestr przesuwający z liniowym sprzężeniem zwrotnym wykorzystywany do wygenerowania losowej wartości koloru górnej połówki ekranu
+ variable counter_lfsr_rgb :std_logic_vector(23 downto 0 ) := (others=>'0');
+ variable LFSR_rgb2: std_logic_vector(23 downto 0):="001100111000100100001100";--Rejestr przesuwający z liniowym sprzężeniem zwrotnym wykorzystywany do wygenerowania losowej wartości koloru dolnej połówki ekranu
+ variable counter_lfsr_rgb2 :std_logic_vector(23 downto 0 ) := (others=>'0');
+ variable ileCzasu : integer; -- zmienna przechowująca wartość czasu w milisekundach od naciśnięcia przycisku 
+ 
+ begin
 	 
-	 
-	 variable counter_lfsr_rgb :std_logic_vector(23 downto 0 ) := (others=>'0');
-	 variable LFSR_rgb2: std_logic_vector(23 downto 0):="001100111000100100001100";
-	 variable counter_lfsr_rgb2 :std_logic_vector(23 downto 0 ) := (others=>'0');
-	 	variable ileCzasu : integer;
-		variable przesuwanie :std_logic;
-	 begin
-	 if rising_edge(clk_25) then
-	 
-	 
-	 
-	if licznik=0 then
-		LFSR(0):=LFSR(1) xor LFSR(3) xor LFSR (5) xor LFSR(10) xor LFSR(15) xor LFSR (20);
-	LFSR:= LFSR(0)&LFSR(29 downto 1);
-	counter_lfsr:=LFSR;
+------------------------------- maszyna stanów
+ if rising_edge(clk_25) then
 	
-	
-LFSR_rgb(0):=LFSR_rgb(1) xor LFSR_rgb(3) xor LFSR_rgb (5) xor LFSR_rgb(10) xor LFSR_rgb(15) xor LFSR_rgb (20);
-	LFSR_rgb:= LFSR_rgb(0)&LFSR_rgb(23 downto 1);
-	rgb<=LFSR_rgb;
-	
-	LFSR_rgb2(0):=LFSR_rgb2(1) xor LFSR_rgb2(3) xor LFSR_rgb2 (5) xor LFSR_rgb2(10) xor LFSR_rgb2(15) xor LFSR_rgb2 (20);
-	LFSR_rgb2:= LFSR_rgb2(0)&LFSR_rgb2(23 downto 1);
-	
-	
-	
-	licznik<=1;
-	--rgb<=rgb;
-	
-		elsif licznik =1 then
+	if licznik=0 then   -- pierwszy stan maszyny, pseudolosowe generowanie liczb
+		------- proces generowania losowych wartości 
+		LFSR(0):=LFSR(1) xor LFSR(3) xor LFSR (5) xor LFSR(10) xor LFSR(15) xor LFSR (20); 
+		LFSR:= LFSR(0)&LFSR(29 downto 1);
+		counter_lfsr:=LFSR;
+		LFSR_rgb(0):=LFSR_rgb(1) xor LFSR_rgb(3) xor LFSR_rgb (5) xor LFSR_rgb(10) xor LFSR_rgb(15) xor LFSR_rgb (20);
+		LFSR_rgb:= LFSR_rgb(0)&LFSR_rgb(23 downto 1);
+		rgb<=LFSR_rgb;
+		LFSR_rgb2(0):=LFSR_rgb2(1) xor LFSR_rgb2(3) xor LFSR_rgb2 (5) xor LFSR_rgb2(10) xor LFSR_rgb2(15) xor LFSR_rgb2 (20);
+		LFSR_rgb2:= LFSR_rgb2(0)&LFSR_rgb2(23 downto 1);
+		licznik<=1; --zwiększenie licznika w celu zmiany stanu maszyny na następny
+		-----------------------------
+		elsif licznik =1 then -- drugi stan maszyny, porównanie wartości licznika nabijanego zegarem z wartością wygenerowaną w pierwszym stanie maszyny
 			if counter_clock=counter_lfsr then	
-		   rgb2<=LFSR_rgb2;	
-			rgb<=LFSR_rgb;
-			licznik<=2;
+		   		rgb2<=LFSR_rgb2;	
+				rgb<=LFSR_rgb;
+				licznik<=2; --zwiększenie licznika w celu zmiany stanu maszyny na następny
 			else
-			counter_clock <= counter_clock + 1; -- dodawanie
-			diody<=(others=>'0');
-			rgb<=(others=>'0');
-			end if;
-			
-			elsif licznik=2 then
-			   if key(3)='1' then
-			   ileCzasu:=ileCzasu+1;78
-				rgb <= rgb;
-				else
-				   licznik<=3;
-					diody <= std_logic_vector(to_unsigned(ileczasu/25000,16));
-					rgb<=rgb;
+				counter_clock <= counter_clock + 1; -- inkrementacja licznika
+				diody<=(others=>'0'); 
+				rgb<=(others=>'0');
 				end if;
 			
-		
+			elsif licznik=2 then   
+			   if key(3)='1' then 
+			  	 ileCzasu:=ileCzasu+1;
+				 rgb <= rgb;
+			   else
+				   licznik<=3; --zwiększenie licznika w celu zmiany stanu maszyny na następny
+				   diody <= std_logic_vector(to_unsigned(ileczasu/25000,16));
+				   rgb<=rgb;
+			   end if;
 	      elsif licznik=3 then 
+		      
 			   if key(2)='0' then
 				  licznik<=0;
 				  rgb<=(others=>'0');
@@ -118,35 +99,20 @@ LFSR_rgb(0):=LFSR_rgb(1) xor LFSR_rgb(3) xor LFSR_rgb (5) xor LFSR_rgb(10) xor L
 				  counter_clock<=0;
 				  diody<=(others=>'0');
 				  rgb2<=(others=>'0');
-				else
+			   else
 				  rgb <= rgb;
-				end if;	
-	          	
-			end if;
-			
-			--diody<=key(3)&"000000000000000";
-		
-		
-		end if;
-	
-	--end if;
+			   end if;
+		end if;	
+	end if;	 
+ end process;
 	 
-
-	
-	 
-	 --end if;
-	 
-	 end process;
-	 
-	 --rgb <= "111111110000000011111111" when licznik = 3 else (others => '0')
-	 
-	--------------------------------------------------------- 
+--------------------------------------------------------- 
     process (clk_25)
     begin
         if rising_edge(clk_25) then
             if xcounter = 799 then
                 xcounter <= 0;
-               if ycounter = 524 then  --tutaj mozna wrocic do 520
+               if ycounter = 524 then  
                     ycounter <= 0;
                 else
                     ycounter <= ycounter + 1;
@@ -155,25 +121,9 @@ LFSR_rgb(0):=LFSR_rgb(1) xor LFSR_rgb(3) xor LFSR_rgb (5) xor LFSR_rgb(10) xor L
                 xcounter <= xcounter + 1;
             end if;
         end if;
-		  end process;
----------------------------
-process(clk_50)      --clock 1hz
-begin
-if rising_edge(clk_50) then
-count <=count+1;
-if (count = 2500000) then
-tmp <= NOT tmp;
-count <= 1;
-end if;
-end if;
-clk_1hz <= tmp;
-end process;
---------------------------
-		  
+		  end process;   
     
-    
-    --front porch+pulse width
-	 process (clk_25) 
+process (clk_25) 
 	begin
 	 if rising_edge(clk_25) then
 	 
@@ -187,12 +137,7 @@ end process;
 	    vga_vs <= '0';
 	 else
 	    vga_vs <= '1';
-	 end if;
-	 
-	 
-	 
-	--vga_hs <= '0' when xcounter >= 16 and  xcounter < 112 else '1';   --16+96
-    --vga_vs <= '0' when ycounter >= 10 and ycounter < 12 else '1';    --10+2
+	 end if; 
 	 end if;
 	 end process;
 	 
@@ -201,20 +146,12 @@ n_blank<='1';
 n_sync<='0';
 vga_clk<=clk_25;
 
---rgb<="111111110000000000000000";
-  
-
-  
-  
-  
-       process (xcounter, ycounter,rgb,clk_25)
+ 
+process (xcounter, ycounter,rgb,clk_25)
     begin
----------------------------------------------------
-		
------------------------------------------------ 
 if rising_edge(clk_25) then
         if xcounter < 160 or ycounter < 45 then
-           RED0 <='0';
+          	        RED0 <='0';
  			RED1 <= '0';
  			RED2 <= '0';
 			RED3 <= '0';
@@ -222,8 +159,7 @@ if rising_edge(clk_25) then
  			RED5 <= '0';
 			RED6 <= '0';
  			RED7 <= '0';
-			
- 			BLU0 <= '0';
+			BLU0 <= '0';
  			BLU1 <= '0';
  			BLU2 <='0';
 			BLU3 <= '0';
@@ -243,8 +179,8 @@ if rising_edge(clk_25) then
        else
 		 
 		    if ycounter <300 then
-         RED0 <= RGB(23) ;--and '1'  ;
- 			RED1 <= RGB(22)   ;
+       		        RED0 <= RGB(23) ;
+	       		RED1 <= RGB(22)   ;
  			RED2 <= RGB(21)   ;
 			RED3 <= RGB(20)  ;
  			RED4 <= RGB(19)  ;
@@ -268,38 +204,37 @@ if rising_edge(clk_25) then
 			GRN6 <= RGB(1)   ;
  			GRN7 <= RGB(0)   ;
 			else
-         RED0 <= RGB2(23) ; --and '1' ;
- 			RED1 <= RGB2(22) ;-- and '1' ;
- 			RED2 <= RGB2(21) ;-- and '1' ;
-			RED3 <= RGB2(20) ;-- and '1' ;
- 			RED4 <= RGB2(19)  ;--and '1'  ;
- 			RED5 <= RGB2(18)  ;--and '1' ;
-			RED6 <= RGB2(17)  ;--and '1' ;
- 			RED7 <= RGB2(16)  ;--and '1' ;
- 			BLU0 <= RGB2(15) ;-- and '0' ;
- 			BLU1 <= RGB2(14)  ;--and '0' ;
- 			BLU2 <= RGB2(13)  ;--and '0' ;
-			BLU3 <= RGB2(12) ;-- and '0' ;
- 			BLU4 <= RGB2(11)  ;--and '0' ;
- 			BLU5 <= RGB2(10)  ;--and '0' ;
-			BLU6 <= RGB2(9) ;-- and '0' ;
- 			BLU7 <= RGB2(8) ;-- and '0' ;
-			GRN0 <= RGB2(7) ;-- and '0' ;
- 			GRN1 <= RGB2(6)  ;--and '0' ;
- 			GRN2 <= RGB2(5) ;-- and '0' ;
-			GRN3 <= RGB2(4)  ;--and '0' ;
- 			GRN4 <= RGB2(3);--  and '0' ;
- 			GRN5 <= RGB2(2) ;-- and '0' ;
-			GRN6 <= RGB2(1)  ;--and '0' ;
- 			GRN7 <= RGB2(0) ;--- and '0' ;			
+         		RED0 <= RGB2(23) ; 
+ 			RED1 <= RGB2(22) ;
+ 			RED2 <= RGB2(21) ;
+			RED3 <= RGB2(20) ;
+ 			RED4 <= RGB2(19)  ;
+ 			RED5 <= RGB2(18)  ;			
+			RED6 <= RGB2(17)  ;
+ 			RED7 <= RGB2(16)  ;
+ 			BLU0 <= RGB2(15) ;
+ 			BLU1 <= RGB2(14)  ;
+ 			BLU2 <= RGB2(13)  ;			
+			BLU3 <= RGB2(12) ;
+ 			BLU4 <= RGB2(11)  ;
+ 			BLU5 <= RGB2(10)  ;
+			BLU6 <= RGB2(9) ; 			
+			BLU7 <= RGB2(8) ;
+			GRN0 <= RGB2(7) ;
+ 			GRN1 <= RGB2(6)  ;
+ 			GRN2 <= RGB2(5) ;
+			GRN3 <= RGB2(4)  ;
+ 			GRN4 <= RGB2(3);
+ 			GRN5 <= RGB2(2) ;
+			GRN6 <= RGB2(1)  ;
+ 			GRN7 <= RGB2(0) ;			
 			end if;
 			
         end if;
-		  end if;
-    end process;
-    
-	 
-	   process (xcounter)
+ end if;
+end process;
+
+	 process (xcounter)
     begin
         if xcounter >= 160 then
             pix_x <= std_logic_vector(to_unsigned(xcounter - 160, pix_x'length));
